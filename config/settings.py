@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +20,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-hou(8rwg2jnb4xet$fr4x+5=04q^jojvgvvokk*91c37m__1!v"
+# SECRET_KEY = ""
+SECRET_KEY = os.environ.get("SECRET_KEY","django-insecure-hou(8rwg2jnb4xet$fr4x+5=04q^jojvgvvokk*91c37m__1!v")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG","False").lower() == "true"
+# DEBUG=True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'todo-api-5jx7.onrender.com']
 
 
 # Application definition
@@ -36,16 +38,28 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+
+     # Whitenoise Configuration (apps)
+    "whitenoise.runserver_nostatic",
+
     "django.contrib.staticfiles",
-    # 3rd party
+
+    # 3rd party packages
     "rest_framework",
-    # Local
+    "corsheaders",
+    # Local Apps
     "todos.apps.TodosConfig",  # new
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+
+    # whitenoise middleware (serving static files in production):
+    "whitenoise.middleware.WhiteNoiseMiddleware", 
+
+    # Handling CORS :
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -121,7 +135,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = "/static/"
+STATIC_URL = "static/"
+
+STATICFILES_DIRS = [BASE_DIR ,"static"] # new
+STATIC_ROOT = BASE_DIR / "staticfiles" # new
+
+# Instructs  python to utilize whitenoise to serve production static files 
+STATIC_FILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage" 
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
@@ -134,3 +155,16 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.AllowAny",
     ],
 }
+
+
+CORS_ALLOWED_ORIGINS = (
+    # Whitelisting Allowed Domains : 
+    "http://localhost:3000", # React JS Frontend 
+    "http://localhost:5173", # Vite Powered 
+    "http://localhost:8080", #Localhost
+    "http://localhost:8080", #Localhost/ Default Django Port
+)
+
+
+# Securely Handling CSRF Tokens from forms on the frontend :
+CSRF_TRUSTED_ORIGINS = ["localhost:3000"] # React
